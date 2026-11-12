@@ -1,0 +1,69 @@
+x-lab: &lab
+  build: .
+  image: ctf-labs:latest
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  lab1:
+    <<: *lab
+    container_name: ctf-lab1
+    environment:
+      LAB: "1"
+      SECRET_KEY_1: "${SECRET_KEY_1:?SECRET_KEY_1 wajib diisi di .env}"
+      FLAG_1: "${FLAG_1:?FLAG_1 wajib diisi di .env}"
+    ports:
+      - "8011:5000"
+
+  lab2:
+    <<: *lab
+    container_name: ctf-lab2
+    environment:
+      LAB: "2"
+      SECRET_KEY_2: "${SECRET_KEY_2:?SECRET_KEY_2 wajib diisi di .env}"
+      FLAG_2: "${FLAG_2:?FLAG_2 wajib diisi di .env}"
+    ports:
+      - "8012:5000"
+
+  lab3:
+    <<: *lab
+    container_name: ctf-lab3
+    environment:
+      LAB: "3"
+      SECRET_KEY_3: "${SECRET_KEY_3:?SECRET_KEY_3 wajib diisi di .env}"
+      FLAG_3: "${FLAG_3:?FLAG_3 wajib diisi di .env}"
+    ports:
+      - "8013:5000"
+
+  lab4:
+    <<: *lab
+    container_name: ctf-lab4
+    environment:
+      LAB: "4"
+      SECRET_KEY_4: "${SECRET_KEY_4:?SECRET_KEY_4 wajib diisi di .env}"
+      FLAG_4: "${FLAG_4:?FLAG_4 wajib diisi di .env}"
+    ports:
+      - "8014:5000"
+
+  lab5:
+    <<: *lab
+    container_name: ctf-lab5
+    environment:
+      LAB: "5"
+      SECRET_KEY_5: "${SECRET_KEY_5:?SECRET_KEY_5 wajib diisi di .env}"
+      FLAG_5: "${FLAG_5:?FLAG_5 wajib diisi di .env}"
+    ports:
+      - "8015:5000"
+
+  lab6:
+    <<: *lab
+    container_name: ctf-lab6
+    environment:
+      LAB: "6"
+      SECRET_KEY_6: "${SECRET_KEY_6:?SECRET_KEY_6 wajib diisi di .env}"
+      FLAG_6: "${FLAG_6:?FLAG_6 wajib diisi di .env}"
+    ports:
+      - "8016:5000"
