@@ -10,10 +10,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
+COPY static/ static/
 
-RUN adduser --system --uid 10001 --no-create-home lab
+RUN adduser --system --uid 10001 --no-create-home appuser
 
-USER lab
+USER appuser
 
 EXPOSE 5000
 

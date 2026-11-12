@@ -1,254 +1,183 @@
-# Kunci Jawaban Lab
+# Kunci Jawaban Lengkap Lab CTF Nusatech
 
-> **Khusus pengajar.** Dokumen ini membocorkan seluruh langkah penyelesaian.
-> Jangan membagikannya kepada peserta dan jangan menaruhnya di server challenge.
-> File ini juga dikecualikan dari image Docker melalui `.dockerignore`.
-
-## Prasyarat
-
-- Gunakan alamat lab yang diberikan panitia, misalnya `http://IP-SERVER:8011`
-  untuk Lab 1. Di dokumen ini alamat tersebut ditulis sebagai `{URL}`.
-- Setiap lab berdiri sendiri. Jika sesi atau data uji perlu dibersihkan, buka
-  `{URL}/reset`. Database juga dibuat ulang setiap container dijalankan ulang.
-- Flag yang benar adalah nilai `FLAG_n` pada environment container. Jangan
-  memakai flag pengembangan `CTF{dev_only_lab_N}` untuk lomba.
-
-| Lab | Nama soal | Poin | Halaman awal |
-| --- | --- | --- | --- |
-| 1 | Toko Kategori | 30 | `{URL}/lab1` |
-| 2 | Login Administrator | 40 | `{URL}/lab2` |
-| 3 | Harga Spesial | 40 | `{URL}/lab3` |
-| 4 | Keranjang Ajaib | 60 | `{URL}/lab4` |
-| 5 | Email Perusahaan | 60 | `{URL}/lab5` |
-| 6 | Kupon Berlapis | 70 | `{URL}/lab6` |
+> 🔒 **DOKUMEN KHUSUS PENGAJAR / ADMINISTRATOR CTF**  
+> Dilarang membagikan dokumen ini kepada peserta lomba. File ini dikecualikan dari Docker build image melalui konfigurasi `.dockerignore`.
 
 ---
 
-## Lab 1 - Toko Kategori (SQL Injection)
+## Lab 1 — Nusatech: Katalog Khusus (SQLi WHERE Clause)
 
-**Tujuan:** menampilkan produk yang belum dirilis dan membaca flag di
-deskripsinya.
-
-**Langkah:**
-
-1. Buka `{URL}/lab1`.
-2. Coba filter kategori normal, misalnya `Gifts`. Hanya produk yang sudah
-   dirilis yang tampil.
-3. Masukkan payload berikut pada kolom kategori:
-
-   ```text
-   Gifts' OR 1=1--
-   ```
-
-   Jika dikirim lewat URL, bentuk terenkodenya adalah:
-
-   ```text
-   {URL}/lab1?category=Gifts%27%20OR%201%3D1--
-   ```
-
-4. Semua produk, termasuk `Prototype Gadget`, akan tampil. Flag ada pada
-   deskripsi produk tersebut.
-
-**Payload inti:** `Gifts' OR 1=1--`
-
-**Mengapa berhasil:** input kategori disisipkan langsung ke query:
-
-```sql
-SELECT name, price, description FROM products
-WHERE category='Gifts' OR 1=1--' AND released=1
-```
-
-Bagian `OR 1=1` membuat kondisi selalu benar, sedangkan `--` mengabaikan sisa
-query termasuk `AND released=1`.
-
-**Perbaikan:** gunakan parameterized query (`WHERE category = ? AND released = 1`)
-dan, bila perlu, validasi kategori terhadap daftar nilai yang diizinkan.
+- **Celah:** SQL Injection pada Klausa WHERE
+- **Tujuan:** Menampilkan produk prototipe yang belum dirilis (`released = 0`) dan mendapatkan `FLAG_1` yang tersimpan pada deskripsi produk tersebut.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8011/lab1`.
+  2. Perhatikan filter kategori yang tersedia di halaman katalog (misalnya filter `Elektronik`).
+  3. Masukkan payload berikut pada input pencarian/filter kategori:
+     ```sql
+     Elektronik' OR 1=1--
+     ```
+     Atau jika diakses langsung melalui parameter query URL:
+     ```text
+     http://IP-SERVER:8011/lab1?category=Elektronik%27+OR+1%3D1--
+     ```
+  4. Halaman akan menampilkan seluruh produk di database, termasuk **Prototipe Sensor Cuaca v3** (`released=0`). Flag tertera pada deskripsi produk tersebut.
+- **Akar Masalah:**
+  Query SQL pada fungsi `lab1()` dibentuk menggunakan format string tanpa sanitasi:
+  ```python
+  f"SELECT * FROM products WHERE category = '{cat}' AND released = 1"
+  ```
+  Payload `Elektronik' OR 1=1--` mengubah query menjadi:
+  ```sql
+  SELECT * FROM products WHERE category = 'Elektronik' OR 1=1--' AND released = 1
+  ```
+  Kondisi `OR 1=1` selalu bernilai TRUE untuk setiap baris, sementara tanda `--` mematikan sisa filter `AND released = 1`.
+- **Rekomendasi Perbaikan:**
+  Gunakan query berparameter (*parameterized query*):
+  ```python
+  db.execute("SELECT * FROM products WHERE category = ? AND released = 1", (cat,))
+  ```
 
 ---
 
-## Lab 2 - Login Administrator (SQL Injection)
+## Lab 2 — Nusatech: Pintu Belakang Manajer (SQLi Login Bypass)
 
-**Tujuan:** masuk sebagai `administrator` tanpa mengetahui password-nya.
-
-**Langkah:**
-
-1. Buka `{URL}/lab2`.
-2. Isi kolom username dengan:
-
-   ```text
-   administrator'--
-   ```
-
-3. Isi kolom password dengan sembarang nilai, misalnya `x`.
-4. Submit. Halaman menampilkan flag Lab 2.
-
-**Payload inti:** username `administrator'--`, password bebas.
-
-**Mengapa berhasil:** query dibentuk dengan penggabungan string:
-
-```sql
-SELECT username FROM users
-WHERE username='administrator'--' AND password='x'
-```
-
-`--` mengomentari pengecekan password, sehingga query hanya mencari username
-`administrator`.
-
-**Perbaikan:** gunakan parameterized query, simpan password sebagai hash
-(misalnya `werkzeug.security`), dan jangan pernah menyusun query dengan
-interpolasi string.
+- **Celah:** SQL Injection pada Mekanisme Autentikasi
+- **Tujuan:** Masuk sebagai administrator utama (`admin_utama`) tanpa mengetahui kata sandinya untuk mendapatkan `FLAG_2`.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8012/lab2`.
+  2. Pada kolom **Nama Pengguna (Username)**, masukkan payload:
+     ```text
+     admin_utama'--
+     ```
+  3. Pada kolom **Kata Sandi (Password)**, isi dengan karakter sembarang (misalnya: `123`).
+  4. Klik tombol **Masuk Sekarang**.
+  5. Sistem akan menampilkan Dashboard Administrator Utama dengan token verifikasi `FLAG_2`.
+- **Akar Masalah:**
+  String formulir login digabungkan langsung ke dalam query autentikasi:
+  ```python
+  f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+  ```
+  Payload menghasilkan:
+  ```sql
+  SELECT * FROM users WHERE username = 'admin_utama'--' AND password = '123'
+  ```
+  Karakter `--` mengabaikan seluruh pengecekan password, sehingga database mengembalikan baris user `admin_utama`.
+- **Rekomendasi Perbaikan:**
+  Gunakan *parameterized query* serta simpan kata sandi dalam bentuk *hash* yang aman (misalnya bcrypt/Argon2/PBKDF2 via `werkzeug.security`).
 
 ---
 
-## Lab 3 - Harga Spesial (Manipulasi Hidden Input)
+## Lab 3 — Nusatech: Diskon Mandiri (Excessive Trust in Client-Side Controls)
 
-**Tujuan:** membeli jaket seharga $1337 dengan kredit $100.
-
-**Langkah:**
-
-1. Buka `{URL}/lab3`.
-2. Inspect elemen form jaket. Ada dua input tersembunyi: `pid` dan `price`.
-3. Ubah `value` pada input `price` dari `1337.00` menjadi `1`.
-4. Submit form. Saldo berkurang $1 dan flag Lab 3 muncul.
-
-**Payload inti:** `price=1` pada form pembelian `pid=1`.
-
-**Mengapa berhasil:** server memakai harga yang dikirim browser. Validasi hanya
-memeriksa `price >= 0` dan `price <= saldo`, bukan kecocokan dengan harga
-katalog.
-
-**Perbaikan:** abaikan harga dari client. Ambil harga dari database berdasarkan
-`pid`, hitung di server, dan gunakan tipe uang yang aman (misalnya integer
-sen).
-
----
-
-## Lab 4 - Keranjang Ajaib (Quantity Negatif)
-
-**Tujuan:** membuat total belanja masuk akal meskipun jaket berharga $1337.
-
-**Langkah:**
-
-1. Buka `{URL}/lab4`.
-2. Tambahkan jaket (`pid=1`) dengan jumlah `1`.
-3. Tambahkan Gift Card (`pid=2`) dengan jumlah `-131`.
-4. Total keranjang menjadi:
-
-   ```text
-   1337 + (10 x -131) = 1337 - 1310 = 27
-   ```
-
-5. Klik checkout. Total $27 berada di antara 0 dan $100, dan jaket masih ada
-   dengan jumlah positif. Flag Lab 4 muncul.
-
-**Payload inti:** `pid=1&qty=1` lalu `pid=2&qty=-131`, kemudian checkout.
-
-**Mengapa berhasil:** server tidak memeriksa batas bawah jumlah barang. Jumlah
-negatif menghasilkan subtotal negatif dan menurunkan total.
-
-**Perbaikan:** tolak jumlah `<= 0`, tetapkan batas maksimum, validasi ulang isi
-keranjang di server, dan hitung total dari harga katalog.
+- **Celah:** Ketergantungan Berlebihan pada Kontrol Sisi Klien (*Hidden Field Tampering*)
+- **Tujuan:** Membeli **Drone Elang X200** seharga $1.249,00 dengan modal saldo awal yang hanya $100.00 untuk mendapatkan `FLAG_3`.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8013/lab3`.
+  2. Buka fitur *Developer Tools* browser (tekan `F12` atau klik kanan &rarr; *Inspect* pada kartu produk **Drone Elang X200**).
+  3. Temukan elemen formulir tersembunyi pada kartu Drone:
+     ```html
+     <input type="hidden" name="price" value="1249.00">
+     ```
+  4. Ubah atribut `value` tersebut menjadi nominal kecil yang terjangkau oleh saldo Anda, misalnya:
+     ```html
+     <input type="hidden" name="price" value="1.00">
+     ```
+  5. Klik tombol **Tambah ke Keranjang**. Drone akan masuk ke keranjang belanja dengan harga satuan $1.00.
+  6. *(Opsional)* Anda dapat menambahkan barang belanjaan lain ke dalam keranjang.
+  7. Pada bagian tabel **Keranjang Penawaran Anda**, klik tombol **Konfirmasi & Bayar Pesanan**.
+  8. Karena total belanja ($1.00) lebih kecil atau sama dengan saldo akun ($100.00), transaksi berhasil divalidasi dan `FLAG_3` akan muncul di notifikasi sukses.
+- **Akar Masalah:**
+  Server membaca dan memercayai parameter `price` yang dikirimkan oleh browser klien tanpa memverifikasinya kembali ke katalog database master.
+- **Rekomendasi Perbaikan:**
+  Hanya kirimkan `product_id` dari browser. Nilai harga resmi harus selalu ditarik dan dihitung dari database sisi server.
 
 ---
 
-## Lab 5 - Email Perusahaan (Business Logic)
+## Lab 4 — Nusatech: Keranjang Ajaib (Negative Quantity Logic Flaw)
 
-**Tujuan:** membuka halaman admin yang hanya menerima email `@ctf-corp.com`.
-
-**Langkah:**
-
-1. Buka `{URL}/lab5`.
-2. Daftar dengan email biasa, misalnya:
-
-   ```text
-   username: peserta
-   password: rahasia123
-   email:    peserta@example.com
-   ```
-
-   Jika username sudah dipakai, buka `{URL}/reset` lalu ulangi dengan username
-   lain.
-
-3. Login dengan akun tersebut.
-4. Pada form ubah email, ganti email menjadi:
-
-   ```text
-   peserta@ctf-corp.com
-   ```
-
-5. Buka `{URL}/lab5/admin`. Flag Lab 5 tampil.
-
-**Payload inti:** email akhir `peserta@ctf-corp.com`.
-
-**Mengapa berhasil:** pengecekan domain hanya dilakukan saat pendaftaran.
-Endpoint `update-email` menerima domain apa pun, sedangkan halaman admin hanya
-memeriksa email yang tersimpan.
-
-**Perbaikan:** terapkan validasi domain yang sama saat mendaftar dan mengubah
-email, verifikasi kepemilikan email melalui token, dan jangan memakai domain
-email sebagai satu-satunya penentu hak akses.
+- **Celah:** Celah Logika Bisnis Kuantitas Nilai Negatif
+- **Tujuan:** Membeli **Drone Elang X200** ($1.249,00) dengan saldo $100.00 melalui manipulasi nilai total keranjang belanja menggunakan kuantitas negatif untuk mendapatkan `FLAG_4`.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8014/lab4`.
+  2. Pada kartu produk **Drone Elang X200** ($1.249,00), masukkan jumlah `1`, lalu klik **Masukkan**. Subtotal keranjang saat ini adalah `$1.249,00`.
+  3. Cari produk dengan harga murah, misalnya **Earbuds Gema Pro** ($42,00).
+  4. Kita membutuhkan pengurangan sebesar minimal `$1.150,00` agar total belanja menjadi `$100,00` atau kurang.
+     - Hitungan: $1.249 - ($42 × 28) = $1.249 - $1.176 = **$73.00**.
+  5. Pada produk Earbuds Gema Pro, ubah jumlah input menjadi angka negatif: `-28`.
+  6. Klik tombol **Masukkan**.
+  7. Periksa tabel keranjang belanja:
+     - Drone Elang X200: 1 unit &times; $1.249,00 = $1.249,00
+     - Earbuds Gema Pro: -28 unit &times; $42,00 = -$1.176,00
+     - **Total Tagihan: $73.00**
+  8. Karena total tagihan ($73.00) berada di dalam rentang saldo ($0.00 &le; Total &le; $100.00) dan keranjang memuat Drone Elang X200 dengan kuantitas > 0, klik **Selesaikan Pesanan**.
+  9. Transaksi berhasil dan notifikasi pesanan menampilkan `FLAG_4`.
+- **Akar Masalah:**
+  Server mengonversi input `qty` menjadi integer namun tidak memvalidasi batasan nilai minimum (`qty > 0`).
+- **Rekomendasi Perbaikan:**
+  Tolak setiap input kuantitas yang bernilai kurang dari atau sama dengan nol:
+  ```python
+  if qty is None or qty <= 0:
+      flash("Kuantitas produk harus berupa angka positif.", "error")
+  ```
 
 ---
 
-## Lab 6 - Kupon Berlapis (Logika Diskon)
+## Lab 5 — Nusatech: Akses Internal Staf (Inconsistent Access Control)
 
-**Tujuan:** menurunkan harga jaket dari $1337 menjadi maksimal $100.
-
-**Langkah:**
-
-1. Buka `{URL}/lab6`. Harga awal adalah $1337.00.
-2. Terapkan kupon secara bergantian, mulai dari `NEWCUST5`:
-
-   ```text
-   NEWCUST5, SIGNUP30, NEWCUST5, SIGNUP30, ...
-   ```
-
-3. Ulangi sampai 14 kupon (7 pasang). Perhatikan harga setelah setiap kupon:
-
-   | Urutan | Kupon | Harga |
-   | --- | --- | --- |
-   | 0 | - | $1337.00 |
-   | 1 | NEWCUST5 | $1332.00 |
-   | 2 | SIGNUP30 | $932.40 |
-   | 3 | NEWCUST5 | $927.40 |
-   | 4 | SIGNUP30 | $649.18 |
-   | 5 | NEWCUST5 | $644.18 |
-   | 6 | SIGNUP30 | $450.93 |
-   | 7 | NEWCUST5 | $445.93 |
-   | 8 | SIGNUP30 | $312.15 |
-   | 9 | NEWCUST5 | $307.15 |
-   | 10 | SIGNUP30 | $215.00 |
-   | 11 | NEWCUST5 | $210.00 |
-   | 12 | SIGNUP30 | $147.00 |
-   | 13 | NEWCUST5 | $142.00 |
-   | 14 | SIGNUP30 | $99.40 |
-
-4. Setelah harga $99.40, klik checkout. Flag Lab 6 muncul.
-
-**Payload inti:** gunakan `NEWCUST5` dan `SIGNUP30` secara bergantian sebanyak
-14 kali, lalu checkout.
-
-**Mengapa berhasil:** aturan hanya menolak kupon yang sama dengan kupon
-terakhir. Tidak ada batas total pemakaian atau aturan bahwa kupon tidak boleh
-ditumpuk, sehingga potongan tetap dan diskon persen dapat dikombinasikan
-berulang kali.
-
-**Perbaikan:** batasi satu kupon per transaksi atau lacak pemakaian kupon per
-pengguna, tentukan aturan penumpukan secara eksplisit, dan hitung harga akhir
-sepenuhnya di server.
+- **Celah:** Inkonsistensi Validasi Domain pada Fitur Profil Pengguna
+- **Tujuan:** Mendapatkan akses ke Portal Manajemen Staf Internal (`/lab5/internal`) yang dibatasi hanya untuk pemegang email berdomain `@nusatech.internal` untuk mendapatkan `FLAG_5`.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8015/lab5`.
+  2. Pada formulir **Daftar Anggota Baru**, masukkan:
+     - Nama Pengguna: `peserta1`
+     - Alamat Email: `peserta1@gmail.com` (gunakan email publik biasa)
+     - Kata Sandi: `password123`
+  3. Klik **Daftar Akun Baru**. *(Catatan: jika Anda mencoba mendaftar dengan email `@nusatech.internal`, sistem akan menolak).*
+  4. Masuk melalui formulir **Masuk ke Akun Member** menggunakan akun yang baru dibuat.
+  5. Setelah berhasil masuk ke dashboard **Profil Pengguna Terdaftar**, temukan formulir **Perbarui Alamat Email**.
+  6. Ubah alamat email menjadi alamat internal staf, misalnya:
+     ```text
+     peserta1@nusatech.internal
+     ```
+  7. Klik **Simpan Perubahan Email**. Sistem akan memperbarui email tanpa memblokir domain internal.
+  8. Klik tombol **Buka Panel Internal &rarr;** atau buka URL `http://IP-SERVER:8015/lab5/internal`.
+  9. Halaman Portal Manajemen Staf Internal akan terbuka dan menyajikan `FLAG_5`.
+- **Akar Masalah:**
+  Aturan bisnis yang melarang pendaftaran domain `@nusatech.internal` hanya diterapkan pada endpoint registrasi (`/lab5/register`), namun diabaikan pada endpoint pembaruan email (`/lab5/update-email`).
+- **Rekomendasi Perbaikan:**
+  Terapkan logika validasi domain yang seragam dan tersentralisasi pada seluruh endpoint yang memodifikasi data email pengguna, atau wajibkan verifikasi email berbasis token sebelum domain diaktifkan.
 
 ---
 
-## Verifikasi Cepat
+## Lab 6 — Nusatech: Promo Berantai (Flawed Business Rule Enforcement)
 
-| Lab | Bukti berhasil |
-| --- | --- |
-| 1 | Produk `Prototype Gadget` tampil dan deskripsinya memuat flag |
-| 2 | Pesan login administrator dan flag tampil setelah payload username |
-| 3 | Saldo berkurang sesuai harga yang diubah dan flag tampil |
-| 4 | Total keranjang $27.00 dan flag tampil setelah checkout |
-| 5 | Halaman `/lab5/admin` dapat dibuka setelah email diubah |
-| 6 | Harga menjadi $99.40 dan flag tampil setelah checkout |
-
-Untuk mengulang pengujian dari awal, buka `{URL}/reset` atau jalankan ulang
-container lab. Jangan lupa mengganti flag sebelum lomba dimulai.
+- **Celah:** Penegakan Aturan Kupon Promosi yang Tidak Tuntas (*State Validation Flaw*)
+- **Tujuan:** Menumpuk kupon diskon secara bergantian hingga harga **Drone Elang X200** ($1.249,00) turun di bawah saldo akun ($100.00) untuk mendapatkan `FLAG_6`.
+- **Langkah Eksploitasi:**
+  1. Buka browser ke alamat `http://IP-SERVER:8016/lab6`.
+  2. Masukkan kode kupon pertama: `HEMAT50`, lalu klik **Terapkan Kupon** (harga turun dari $1249.00 menjadi $1199.00).
+  3. Masukkan kode kupon kedua: `DISKON30`, lalu klik **Terapkan Kupon** (harga turun 30% menjadi $839.30).
+  4. Masukkan kembali kode kupon: `HEMAT50`, lalu klik **Terapkan Kupon** (harga turun menjadi $789.30).
+  5. Lanjutkan pergantian kupon secara berselang-seling:
+     - Putaran 3: `DISKON30` &rarr; $552.51, lalu `HEMAT50` &rarr; $502.51
+     - Putaran 4: `DISKON30` &rarr; $351.76, lalu `HEMAT50` &rarr; $301.76
+     - Putaran 5: `DISKON30` &rarr; $211.23, lalu `HEMAT50` &rarr; $161.23
+     - Putaran 6: `DISKON30` &rarr; $112.86, lalu `HEMAT50` &rarr; $62.86
+  6. Saat harga telah mencapai **$62.86** (sudah lebih kecil dari batas saldo $100.00), klik tombol **Bayar Sekarang &rarr;**.
+  7. Pembayaran berhasil diproses dan notifikasi konfirmasi pesanan menyajikan `FLAG_6`.
+- **Akar Masalah:**
+  Sistem hanya memeriksa variabel `last_coupon` sesi saat ini:
+  ```python
+  if code == last_code:
+      flash("Kode promosi yang sama tidak dapat digunakan dua kali berturut-turut.", "error")
+  ```
+  Sistem tidak mencatat riwayat pemakaian kupon dalam bentuk set/daftar (`used_coupons = set()`) yang melarang pemakaian ulang kupon yang pernah diterapkan sebelumnya.
+- **Rekomendasi Perbaikan:**
+  Simpan daftar semua kupon yang telah diterapkan dalam bentuk riwayat sesi atau database:
+  ```python
+  used_coupons = session.setdefault("used_coupons", [])
+  if code in used_coupons:
+      flash("Kupon promosi ini sudah pernah Anda gunakan sebelumnya.", "error")
+  else:
+      used_coupons.append(code)
+  ```

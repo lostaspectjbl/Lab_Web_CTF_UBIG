@@ -1,175 +1,138 @@
-# Bahan Challenge untuk CTFd
+# Panduan Pengaturan Soal CTFd Platform
 
-Dokumen ini berisi nama soal, deskripsi, dan hint yang siap disalin ke CTFd.
-Ganti `{URL}` dengan alamat lab yang bisa diakses peserta, misalnya
-`http://IP-SERVER:8011` untuk Lab 1.
+Dokumen ini berisi materi deskripsi tantangan, petunjuk (*hints*), dan konfigurasi untuk dimasukkan ke dalam platform CTFd Anda.
 
-## Ringkasan
+---
 
-| Lab | Nama soal | Kategori | Poin | Endpoint |
-| --- | --- | --- | --- | --- |
-| 1 | Toko Kategori | Web | 30 | `{URL}/lab1` |
-| 2 | Login Administrator | Web | 40 | `{URL}/lab2` |
-| 3 | Harga Spesial | Web | 40 | `{URL}/lab3` |
-| 4 | Keranjang Ajaib | Web | 60 | `{URL}/lab4` |
-| 5 | Email Perusahaan | Web | 60 | `{URL}/lab5` |
-| 6 | Kupon Berlapis | Web | 70 | `{URL}/lab6` |
+## Panduan Cepat Menambahkan Soal di Admin Panel CTFd
 
-Format flag: `CTF{...}`. Nilai flag harus sama dengan `FLAG_n` di `.env`
-container yang bersangkutan. Jangan pernah menulis flag asli di dokumen ini.
+1. Masuk ke dashboard Admin CTFd Anda (`http://IP-SERVER:8080/admin` atau domain CTFd Anda).
+2. Klik menu **Challenges** pada bilah navigasi atas.
+3. Klik tombol **New Challenge** (atau tanda `+`).
+4. Pilih tipe: **Standard**.
+5. Isi formulir tantangan sesuai data di bawah ini (Nama Soal, Kategori: `Web`, Nilai Poin, dan Deskripsi).
+6. Pada tab **Flags**, pilih tipe **Static Flag**, lalu masukkan flag rahasia yang sama persis dengan yang Anda tuliskan di file `.env` server (`FLAG_n`).
+7. Pada tab **Hints**, tambahkan 3 petunjuk bertingkat (opsional: dapat diberi pinalti poin atau gratis).
+8. Ubah status soal dari **Hidden** menjadi **Visible** saat kompetisi dimulai.
 
-## Cara Membuat di CTFd
+---
 
-1. Login sebagai admin, buka **Admin Panel > Challenges > Create Challenge**.
-2. Isi **Name**, pilih **Category: Web**, dan tempel **Description** dari
-   bagian di bawah.
-3. Pada **Flags**, pilih tipe **static**, lalu isi nilai `FLAG_n` yang dipakai
-   server. Jangan pakai flag contoh dari repo.
-4. Tambahkan tiga **Hint** dengan biaya yang disarankan. Hint pertama gratis,
-   hint kedua dan ketiga berbayar agar peserta berpikir dulu.
-5. Simpan, lalu ulangi untuk Lab 2 sampai Lab 6.
-6. Uji dengan akun peserta: buka challenge, pastikan URL benar, dan pastikan
-   flag yang diterima CTFd cocok dengan flag di environment container.
+## 1. Lab 1 — Katalog Produk Tersembunyi
 
-Tips: satu subdomain per lab lebih rapi daripada satu port per lab. Jika
-memakai port, pastikan semua port 8011-8016 terbuka di firewall.
+- **Nama Soal:** Nusatech: Katalog Khusus
+- **Kategori:** Web
+- **Poin Rekomendasi:** 30 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_1` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Nusatech Store baru saja meluncurkan platform katalog elektronik terpadu di `{URL}`.
+  Namun, tim riset internal dikabarkan sedang mengembangkan sebuah unit sensor cuaca prototipe yang statusnya masih dirahasiakan dan belum dirilis untuk umum.
 
-## Lab 1 - Toko Kategori (30 poin)
+  Dapatkah Anda menemukan rincian lisensi firmware prototipe rahasia tersebut dari katalog produk?
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 5 poin):* Perhatikan bagaimana filter kategori mengirimkan parameter melalui URL saat Anda menyaring produk.
+  2. *Hint 2 (Sedang - 10 poin):* Sistem database di balik pencarian produk menyaring data dengan kondisi logika `released = 1`.
+  3. *Hint 3 (Hampir Jelas - 15 poin):* Cobalah masukkan karakter tanda petik tunggal (`'`) untuk memanipulasi klausa WHERE agar kondisi selalu bernilai TRUE, dan gunakan tanda komentar SQL (`--`) untuk mengabaikan sisa query.
 
-**Deskripsi:**
+---
 
-```text
-Toko online kami punya filter kategori di {URL}/lab1. Katalog hanya
-menampilkan produk yang sudah dirilis, tetapi konon ada produk lama yang
-belum sempat dihapus dan menyimpan sesuatu di deskripsinya.
+## 2. Lab 2 — Akses Administrator Toko
 
-Celahnya ada pada cara filter kategori disusun. Bisakah kamu melihat produk
-yang seharusnya tidak tampil?
-```
+- **Nama Soal:** Nusatech: Pintu Belakang Manajer
+- **Kategori:** Web
+- **Poin Rekomendasi:** 40 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_2` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Manajer operasional Nusatech Store memiliki portal akun khusus di `{URL}`.
+  Kata sandi milik akun administrator utama (`admin_utama`) digenerate secara acak dan sangat kuat sehingga mustahil ditebak.
 
-**Hint:**
+  Buktikan bahwa terdapat kelemahan pada mekanisme autentikasi formulir masuk yang memungkinkan Anda masuk sebagai pimpinan toko tanpa mengetahui kata sandinya!
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 5 poin):* Kredensial login dikonfirmasi langsung ke database SQL tanpa preparasi parameter yang aman.
+  2. *Hint 2 (Sedang - 10 poin):* Akun administrator di sistem ini bernama `admin_utama`.
+  3. *Hint 3 (Hampir Jelas - 15 poin):* Karakter `--` dalam SQLite berfungsi untuk mematikan pengecekan kata sandi pada sisa baris query.
 
-1. (0 poin) Coba masukkan kategori yang ada, lalu perhatikan bagaimana hasilnya
-   berubah saat kamu menambahkan karakter kutip.
-2. (10 poin) Server menempelkan input kategori langsung ke dalam query SQL.
-   Pikirkan cara membuat kondisi `WHERE` selalu bernilai benar.
-3. (20 poin) Kamu tidak perlu mengetahui nama produknya. Buat semua baris
-   lolos filter, termasuk yang `released = 0`, lalu baca deskripsinya.
+---
 
-## Lab 2 - Login Administrator (40 poin)
+## 3. Lab 3 — Penawaran Terlalu Menarik
 
-**Deskripsi:**
+- **Nama Soal:** Nusatech: Diskon Mandiri
+- **Kategori:** Web
+- **Poin Rekomendasi:** 40 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_3` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Toko Nusatech di `{URL}` memajang **Drone Elang X200** dengan harga resmi $1.249,00.
+  Setiap pelanggan baru hanya diberikan kredit belanja sebesar $100.00 di akun mereka.
 
-```text
-Kami menemukan panel login lama di {URL}/lab2. Halaman ini seharusnya hanya
-bisa dibuka oleh administrator, tetapi pengecekan SQL-nya dibuat dengan cara
-yang berbahaya.
+  Bisakah Anda mengakali formulir pemesanan barang sehingga Drone tersebut berhasil dibeli dan diverifikasi oleh sistem toko?
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 5 poin):* Periksa elemen formulir HTML (*Inspect Element*) pada tombol pemesanan atau saat menambahkan barang ke keranjang.
+  2. *Hint 2 (Sedang - 10 poin):* Apakah server benar-benar memeriksa keaslian nilai harga yang dikirimkan oleh browser Anda?
+  3. *Hint 3 (Hampir Jelas - 15 poin):* Terdapat input tersembunyi berjenis `<input type="hidden" name="price" ...>`. Ubah nilainya menjadi nominal yang lebih kecil dari sisa saldo Anda (misalnya `$1.00`), masukkan ke keranjang belanja, lalu selesaikan pembayaran.
 
-Gunakan akun demo `wiener:peter` untuk melihat perilaku normal, lalu masuk
-sebagai administrator dan ambil flag-nya.
-```
+---
 
-**Hint:**
+## 4. Lab 4 — Keajaiban Saldo Keranjang
 
-1. (0 poin) Login dengan `wiener:peter` berhasil, tetapi bukan administrator.
-   Perhatikan pesan yang muncul.
-2. (10 poin) Input username dan password disisipkan langsung ke query. Coba
-   buat sisa query setelah username diabaikan.
-3. (20 poin) Kamu tidak perlu tahu password administrator. Cukup buat query
-   hanya memeriksa username, lalu beri komentar pada bagian password.
+- **Nama Soal:** Nusatech: Keranjang Ajaib
+- **Kategori:** Web
+- **Poin Rekomendasi:** 60 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_4` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Sistem keranjang belanja di `{URL}` telah dirancang agar harga produk dibaca langsung dari katalog server tanpa memercayai input harga dari browser.
+  Meskipun demikian, Anda tetap ingin memiliki **Drone Elang X200** ($1.249,00) dengan saldo awal yang hanya $100.00.
 
-## Lab 3 - Harga Spesial (40 poin)
+  Temukan anomali pada pemrosesan kuantitas barang belanjaan di keranjang untuk meloloskan transaksi pesanan Anda!
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 10 poin):* Keranjang belanja memungkinkan Anda menambah atau mengurangi jumlah unit produk.
+  2. *Hint 2 (Sedang - 15 poin):* Sistem mengonversi input jumlah barang menjadi angka bulat (*integer*), tetapi apakah ada batas nilai minimum yang divalidasi?
+  3. *Hint 3 (Hampir Jelas - 25 poin):* Memasukkan kuantitas bernilai negatif pada produk lain yang berharga murah (misal Earbuds Gema Pro seharga $42.00) dapat memotong subtotal keranjang belanja secara drastis hingga total tagihan berada di antara $0 sampai $100.
 
-**Deskripsi:**
+---
 
-```text
-Toko di {URL}/lab3 memberimu kredit $100. Jaket kulit di sana berharga $1337,
-jadi mustahil dibeli dengan saldo normal.
+## 5. Lab 5 — Saluran Staf Korporat
 
-Kabarnya harga dikirim dari browser lewat input tersembunyi. Tentukan sendiri
-harga yang pantas untuk jaket itu dan dapatkan flag-nya.
-```
+- **Nama Soal:** Nusatech: Akses Internal Staf
+- **Kategori:** Web
+- **Poin Rekomendasi:** 60 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_5` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Nusatech memiliki portal staf internal yang hanya dapat dibuka oleh pemegang email resmi perusahaan (`@nusatech.internal`) di `{URL}`.
+  Sistem registrasi umum menolak siapapun yang mencoba mendaftar dengan domain email tersebut.
 
-**Hint:**
+  Telusuri alur manajemen akun pelanggan untuk mencari inkonsistensi kendali akses yang memungkinkan Anda mengakses Portal Staf Internal!
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 10 poin):* Celah ini bukan injeksi SQL, melainkan inkonsistensi logika kendali otorisasi pengguna.
+  2. *Hint 2 (Sedang - 15 poin):* Perhatikan perbedaan validasi masukan antara formulir registrasi awal dengan formulir pembaruan profil di dalam dashboard pengguna.
+  3. *Hint 3 (Hampir Jelas - 25 poin):* Daftarkan akun baru menggunakan email publik biasa (misal `@gmail.com`), masuk ke akun, lalu ubah alamat email aktif Anda menjadi `namaAnda@nusatech.internal` melalui form profil. Setelah itu buka tautan Portal Staf Internal.
 
-1. (0 poin) Inspect elemen form pembelian. Ada field yang tidak terlihat di
-   halaman.
-2. (10 poin) Server memakai harga yang dikirim browser, bukan harga di katalog.
-   Ubah nilainya sebelum submit.
-3. (20 poin) Harga harus tetap non-negatif dan tidak melebihi saldo. Coba
-   angka yang sangat kecil tetapi masih diterima.
+---
 
-## Lab 4 - Keranjang Ajaib (60 poin)
+## 6. Lab 6 — Trik Kupon Bergantian
 
-**Deskripsi:**
+- **Nama Soal:** Nusatech: Promo Berantai
+- **Kategori:** Web
+- **Poin Rekomendasi:** 70 Poin
+- **Tipe Flag:** Static Flag (Isi sesuai nilai `FLAG_6` di file `.env`)
+- **Deskripsi Soal untuk Peserta:**
+  ```markdown
+  Nusatech Store mempromosikan dua kupon diskon resmi di `{URL}`:
+  1. `HEMAT50` (Potongan harga tetap sebesar $50.00)
+  2. `DISKON30` (Potongan harga sebesar 30% dari nilai saat ini)
 
-```text
-Keranjang belanja di {URL}/lab4 menerima jumlah barang dari form. Kreditmu
-$100, sedangkan jaketnya $1337. Tidak ada diskon resmi di toko ini.
-
-Namun, keranjang tampaknya percaya pada angka yang kamu kirim. Buat total
-belanja menjadi masuk akal tanpa menambah saldo, lalu checkout.
-```
-
-**Hint:**
-
-1. (0 poin) Coba tambahkan jaket dan satu barang murah. Perhatikan total di
-   keranjang.
-2. (10 poin) Berapa yang terjadi jika jumlah barang negatif? Apakah server
-   memeriksa batas bawah?
-3. (20 poin) Jaket harus tetap ada di keranjang dengan jumlah positif. Tambahkan
-   barang murah dengan jumlah negatif yang cukup untuk menurunkan total di
-   bawah $100.
-
-## Lab 5 - Email Perusahaan (60 poin)
-
-**Deskripsi:**
-
-```text
-Portal member di {URL}/lab5 melarang pendaftaran dengan email
-`@ctf-corp.com`, karena domain itu khusus karyawan. Di baliknya ada halaman
-admin yang hanya mau membuka pintu untuk email perusahaan.
-
-Apakah larangan saat mendaftar benar-benar cukup?
-```
-
-**Hint:**
-
-1. (0 poin) Daftar dengan email biasa, login, lalu lihat halaman
-   `{URL}/lab5/admin`. Apa yang terjadi?
-2. (10 poin) Ada endpoint untuk mengubah email setelah login. Periksa apakah
-   endpoint itu melakukan pengecekan domain yang sama seperti saat daftar.
-3. (20 poin) Daftar dengan email non-perusahaan, login, ubah email menjadi
-   alamat `@ctf-corp.com`, lalu buka halaman admin.
-
-## Lab 6 - Kupon Berlapis (70 poin)
-
-**Deskripsi:**
-
-```text
-Toko di {URL}/lab6 menjual jaket seharga $1337. Ada dua kupon promosi:
-
-- `NEWCUST5` : potongan $5
-- `SIGNUP30` : diskon 30%
-
-Aturannya hanya satu: kupon yang sama tidak boleh dipakai dua kali
-berturut-turut. Kreditmu $100. Turunkan harga jaket sampai bisa checkout.
-```
-
-**Hint:**
-
-1. (0 poin) Coba satu kupon, lalu checkout. Perhatikan harga dan pesan yang
-   muncul.
-2. (10 poin) Aturan hanya membandingkan kupon dengan kupon terakhir. Apakah
-   kupon berbeda boleh ditumpuk tanpa batas?
-3. (20 poin) Gantilah kedua kupon secara bergantian. Diskon persen akan
-   memperkecil efek potongan tetap, jadi urutan pemakaian berpengaruh.
-
-## Catatan Keamanan
-
-- Jangan menaruh `docs/SOLUTIONS.md` di server challenge atau membagikannya
-  kepada peserta.
-- Jangan memakai flag contoh `CTF{dev_only_lab_N}` untuk lomba.
-- Simpan `.env` dengan permission `600` dan jangan commit ke Git.
-- Setiap container hanya mengaktifkan satu lab, sehingga peserta tidak bisa
-  berpindah lab lewat URL yang sama.
+  Sistem checkout toko melarang pelanggan menggunakan kode promo yang sama lebih dari satu kali secara berturut-turut.
+  Dapatkah Anda menurunkan harga Drone Elang X200 ($1.249,00) hingga mencukupi batas saldo Anda ($100.00)?
+  ```
+- **Petunjuk Bertingkat (Hints):**
+  1. *Hint 1 (Samar - 10 poin):* Sistem menyimpan kode promo terakhir yang Anda masukkan di sesi belanja.
+  2. *Hint 2 (Sedang - 20 poin):* Validasi promo hanya memeriksa: *apakah kupon yang dimasukkan sama dengan kupon terakhir kali diaplikasikan?*
+  3. *Hint 3 (Hampir Jelas - 30 poin):* Terapkan kode `HEMAT50`, kemudian terapkan `DISKON30`, lalu terapkan kembali `HEMAT50`, dan seterusnya secara bergantian sebanyak sekitar 6–7 kali hingga harga akhir drone turun di bawah $100.00 sebelum menekan tombol bayar.

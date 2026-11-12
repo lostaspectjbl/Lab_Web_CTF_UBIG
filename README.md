@@ -1,99 +1,115 @@
-# CTF Web Labs
+# Nusatech CTF Practice Labs
 
-Enam lab CTF web yang sengaja rentan, dibuat untuk latihan SQL injection dan
-business logic. Semua lab berjalan dari satu aplikasi Flask dan satu image
-Docker; setiap container hanya mengaktifkan satu lab.
+Koleksi 6 lab tantangan keamanan aplikasi web (Web Security CTF) bernuansa toko online e-commerce modern: **Nusatech** (*"Belanja Cerdas, Hidup Praktis"*). Seluruh lab ditulis ulang dari awal dengan skenario dan konsep yang terinspirasi dari topik-topik web security ternama (SQL Injection, Business Logic Flaws, Broken Access Control).
 
-> **Peringatan:** aplikasi ini sengaja memiliki celah keamanan. Jangan pernah
-> menaruhnya di internet terbuka tanpa isolasi, dan jangan memakai kredensial
-> atau flag asli di luar lingkungan latihan. Simpan repo ini sebagai **private**.
+> ⚠️ **PERINGATAN KEAMANAN:**
+> Repositori ini berisi celah keamanan web yang **sengaja dibuat untuk tujuan edukasi dan latihan CTF**. 
+> - **JANGAN** mempublikasikan repositori ini ke publik (harus disetel sebagai **PRIVATE REPOSITORY**).
+> - **JANGAN** menaruh kredensial produksi, flag asli, atau kunci rahasia di dalam commit Git.
 
-## Daftar Lab
+---
 
-| Lab | Tema | Port host | Poin CTFd |
-| --- | --- | --- | --- |
-| 1 | SQL injection pada filter kategori | 8011 | 30 |
-| 2 | SQL injection pada form login | 8012 | 40 |
-| 3 | Manipulasi harga di hidden input | 8013 | 40 |
-| 4 | Quantity negatif pada keranjang | 8014 | 60 |
-| 5 | Business logic pada perubahan email | 8015 | 60 |
-| 6 | Tumpukan kupon diskon | 8016 | 70 |
+## Daftar Lab & Port
 
-## Menjalankan Secara Lokal
+Setiap lab berjalan pada container mandiri dengan port host terisolasi:
+
+| Lab | Modul Layanan | Port Host | Kategori Celah | Deskripsi Skenario |
+| :--- | :--- | :---: | :--- | :--- |
+| **Lab 1** | Katalog Produk | `8011` | SQL Injection (WHERE) | Filter kategori produk memungkinkan pengambilan data barang tersembunyi yang belum dirilis. |
+| **Lab 2** | Masuk ke Akun | `8012` | SQL Injection (Auth) | Form login pelanggan rentan manipulasi query untuk masuk sebagai administrator tanpa password. |
+| **Lab 3** | Penawaran Spesial | `8013` | Business Logic Flaw | Manipulasi harga produk pada kontrol sisi klien (*hidden field*) sebelum dimasukkan ke keranjang belanja. |
+| **Lab 4** | Keranjang Belanja | `8014` | Business Logic Flaw | Input kuantitas barang belanjaan tanpa validasi nilai negatif untuk mengurangi total pembayaran akhir. |
+| **Lab 5** | Akun Saya & Staf | `8015` | Access Control Flaw | Inkonsistensi validasi domain antara formulir pendaftaran dan pembaruan email untuk membobol portal internal. |
+| **Lab 6** | Checkout Promo | `8016` | Business Logic Flaw | Sistem penegakan kupon promosi yang hanya memvalidasi pemakaian berturut-turut, memungkinkan perulangan kode diskon. |
+
+---
+
+## Saldo Akun Peserta & Master Data
+
+- **Saldo Awal:** Setiap peserta diberikan saldo awal sebesar `$100.00` yang tersimpan pada cookie sesi bertanda tangan (Flask session).
+- **Produk Incaran:** Pada Lab 3, Lab 4, dan Lab 6, target utama peserta adalah membeli **Drone Elang X200** yang memiliki harga resmi `$1.249,00`.
+- **Domain Internal:** Pada Lab 5, portal staf internal (`/lab5/internal`) hanya dapat diakses oleh email dengan akhiran domain `@nusatech.internal`.
+
+---
+
+## Panduan Menjalankan Secara Lokal
+
+### Prasyarat:
+- Python 3.12 atau 3.13
+- Pip
+
+### 1. Mode All-in-One (Semua Lab Aktif)
+Mode ini sangat cocok untuk pengajar atau pembuat soal yang ingin menguji semua tantangan dalam satu aplikasi tunggal:
 
 ```bash
-python3 -m venv .venv
+# Buat dan aktifkan virtual environment
+python -m venv .venv
+# Di Windows:
+.venv\Scripts\activate
+# Di Linux/macOS:
 source .venv/bin/activate
+
+# Install dependensi
 pip install -r requirements.txt
+
+# Jalankan server pengembangan
 python app.py
 ```
+Akses di browser: `http://127.0.0.1:5000/`. Halaman beranda akan menampilkan tautan ke seluruh 6 lab.
 
-Buka `http://127.0.0.1:5000`. Tanpa variabel `LAB`, semua lab aktif dan
-halaman utama menampilkan tautan ke enam lab. Untuk hanya menjalankan satu lab:
-
-```bash
-LAB=1 FLAG_1='CTF{contoh}' SECRET_KEY='rahasia-lokal' python app.py
-```
-
-Database SQLite dibuat ulang setiap aplikasi start. Lokasi default
-`/tmp/lab.db`, dapat diganti dengan `DB_PATH`.
-
-## Menjalankan dengan Docker Compose
+### 2. Mode Per-Lab Tunggal
+Untuk mensimulasikan lingkungan satu lab spesifik secara lokal:
 
 ```bash
-cp .env.example .env
-# isi SECRET_KEY_1..6 dan FLAG_1..6 di .env
-docker compose up -d --build
+# Contoh menjalankan hanya Lab 1:
+export LAB=1                # Di Windows PowerShell: $env:LAB="1"
+export FLAG_1="CTF{contoh_flag_lab1}"
+python app.py
 ```
+Akses di browser: `http://127.0.0.1:5000/`. Permintaan akan otomatis dialihkan (302) ke `/lab1`. Rute lab lain akan mengembalikan status `404 Not Found`.
 
-Enam container akan listen di port 8011 sampai 8016. Cek status:
+---
 
+## Panduan Menjalankan dengan Docker Compose
+
+Untuk menyalakan ke-6 container sekaligus di server atau mesin lokal:
+
+1. Salin template environment:
+   ```bash
+   cp .env.example .env
+   ```
+2. Isi kunci rahasia dan flag acak di file `.env`.
+3. Jalankan container:
+   ```bash
+   docker compose up -d --build
+   ```
+   *(Atau gunakan perintah `docker-compose up -d --build` jika menggunakan versi lama).*
+
+Periksa status container:
 ```bash
 docker compose ps
 ```
+Akses masing-masing lab melalui port `http://localhost:8011` hingga `http://localhost:8016`.
 
-Panduan deploy lengkap untuk aaPanel ada di [docs/DEPLOY.md](docs/DEPLOY.md).
+---
 
-## Variabel Lingkungan
+## Menjalankan Pengujian Otomatis (Unit Test)
 
-| Variabel | Wajib | Keterangan |
-| --- | --- | --- |
-| `LAB` | Tidak | `1`-`6` untuk mode satu lab; kosong berarti semua lab aktif |
-| `SECRET_KEY_n` | Ya (Docker) | Secret key Flask untuk container lab `n` |
-| `SECRET_KEY` | Tidak | Fallback secret key untuk pemakaian lokal |
-| `FLAG_n` | Ya (Docker) | Flag untuk lab `n` |
-| `DB_PATH` | Tidak | Lokasi file SQLite, default `/tmp/lab.db` |
-
-Nilai flag dan secret asli hanya boleh berada di `.env` (tidak di-commit) atau
-di environment server.
-
-## Tes
+Seluruh mekanisme eksploitasi dan batasan akses telah diuji secara otomatis menggunakan `pytest`:
 
 ```bash
-pip install pytest
-python -m pytest -q
+pytest -v tests/test_labs.py
 ```
 
-Tes mencakup eksploit tiap lab, percobaan normal yang tidak boleh mendapat
-flag, dan isolasi mode `LAB`.
+Pengujian memvalidasi:
+1. Eksploitasi yang tepat pada masing-masing lab berhasil menampilkan flag.
+2. Percobaan biasa atau input normal tidak membocorkan flag.
+3. Mode isolasi `LAB=1` s/d `LAB=6` memblokir akses ke modul lab lain (404).
 
-## Struktur
+---
 
-```text
-app.py               aplikasi Flask dan seluruh lab
-tests/test_labs.py   tes otomatis
-Dockerfile           image aplikasi
-docker-compose.yml   enam service lab
-docs/                panduan deploy, bahan CTFd, kunci jawaban
-```
+## Dokumentasi Tambahan
 
-## Catatan Desain
-
-- Satu image, banyak container: `LAB` memilih lab aktif sehingga tiap peserta
-  hanya melihat tantangan miliknya.
-- State disimpan di session cookie dan SQLite; tidak ada volume agar container
-  mudah dihapus dan dibuat ulang.
-- Flag dibaca dari environment. Jika tidak diisi, aplikasi memakai flag
-  pengembangan `CTF{dev_only_lab_N}` yang tidak boleh dipakai untuk lomba.
-- Kunci jawaban pengajar ada di `docs/SOLUTIONS.md`; file itu tidak ikut ke
-  dalam image Docker.
+- [Panduan Deployment aaPanel & Linux Server](docs/DEPLOY.md)
+- [Bahan Konfigurasi & Hint CTFd Platform](docs/CTFD.md)
+- [Kunci Jawaban Lengkap Pengajar](docs/SOLUTIONS.md)

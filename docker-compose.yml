@@ -1,6 +1,8 @@
-x-lab: &lab
-  build: .
+x-lab: &default-lab
   image: ctf-labs:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
   restart: unless-stopped
   security_opt:
     - no-new-privileges:true
@@ -9,61 +11,61 @@ x-lab: &lab
 
 services:
   lab1:
-    <<: *lab
-    container_name: ctf-lab1
-    environment:
-      LAB: "1"
-      SECRET_KEY_1: "${SECRET_KEY_1:?SECRET_KEY_1 wajib diisi di .env}"
-      FLAG_1: "${FLAG_1:?FLAG_1 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab1
     ports:
       - "8011:5000"
+    environment:
+      - LAB=1
+      - SECRET_KEY=${SECRET_KEY_1:?SECRET_KEY_1 wajib diisi di file .env}
+      - FLAG_1=${FLAG_1:?FLAG_1 wajib diisi di file .env}
 
   lab2:
-    <<: *lab
-    container_name: ctf-lab2
-    environment:
-      LAB: "2"
-      SECRET_KEY_2: "${SECRET_KEY_2:?SECRET_KEY_2 wajib diisi di .env}"
-      FLAG_2: "${FLAG_2:?FLAG_2 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab2
     ports:
       - "8012:5000"
+    environment:
+      - LAB=2
+      - SECRET_KEY=${SECRET_KEY_2:?SECRET_KEY_2 wajib diisi di file .env}
+      - FLAG_2=${FLAG_2:?FLAG_2 wajib diisi di file .env}
 
   lab3:
-    <<: *lab
-    container_name: ctf-lab3
-    environment:
-      LAB: "3"
-      SECRET_KEY_3: "${SECRET_KEY_3:?SECRET_KEY_3 wajib diisi di .env}"
-      FLAG_3: "${FLAG_3:?FLAG_3 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab3
     ports:
       - "8013:5000"
+    environment:
+      - LAB=3
+      - SECRET_KEY=${SECRET_KEY_3:?SECRET_KEY_3 wajib diisi di file .env}
+      - FLAG_3=${FLAG_3:?FLAG_3 wajib diisi di file .env}
 
   lab4:
-    <<: *lab
-    container_name: ctf-lab4
-    environment:
-      LAB: "4"
-      SECRET_KEY_4: "${SECRET_KEY_4:?SECRET_KEY_4 wajib diisi di .env}"
-      FLAG_4: "${FLAG_4:?FLAG_4 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab4
     ports:
       - "8014:5000"
+    environment:
+      - LAB=4
+      - SECRET_KEY=${SECRET_KEY_4:?SECRET_KEY_4 wajib diisi di file .env}
+      - FLAG_4=${FLAG_4:?FLAG_4 wajib diisi di file .env}
 
   lab5:
-    <<: *lab
-    container_name: ctf-lab5
-    environment:
-      LAB: "5"
-      SECRET_KEY_5: "${SECRET_KEY_5:?SECRET_KEY_5 wajib diisi di .env}"
-      FLAG_5: "${FLAG_5:?FLAG_5 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab5
     ports:
       - "8015:5000"
+    environment:
+      - LAB=5
+      - SECRET_KEY=${SECRET_KEY_5:?SECRET_KEY_5 wajib diisi di file .env}
+      - FLAG_5=${FLAG_5:?FLAG_5 wajib diisi di file .env}
 
   lab6:
-    <<: *lab
-    container_name: ctf-lab6
-    environment:
-      LAB: "6"
-      SECRET_KEY_6: "${SECRET_KEY_6:?SECRET_KEY_6 wajib diisi di .env}"
-      FLAG_6: "${FLAG_6:?FLAG_6 wajib diisi di .env}"
+    <<: *default-lab
+    container_name: nusatech-lab6
     ports:
       - "8016:5000"
+    environment:
+      - LAB=6
+      - SECRET_KEY=${SECRET_KEY_6:?SECRET_KEY_6 wajib diisi di file .env}
+      - FLAG_6=${FLAG_6:?FLAG_6 wajib diisi di file .env}
