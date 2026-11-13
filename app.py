@@ -2,9 +2,12 @@ import datetime
 import json
 import math
 import os
+import re
 import secrets
+import shutil
 import sqlite3
 import tempfile
+import uuid
 
 from flask import (
     Blueprint,
@@ -13,6 +16,7 @@ from flask import (
     current_app,
     flash,
     g,
+    has_request_context,
     redirect,
     render_template_string,
     request,
@@ -44,6 +48,13 @@ LAB_TITLES = {
 }
 
 bp = Blueprint("main", __name__)
+
+
+@bp.before_request
+def ensure_participant_session():
+    session.permanent = True
+    if "sid" not in session or not isinstance(session.get("sid"), str):
+        session["sid"] = uuid.uuid4().hex
 
 
 BASE_TEMPLATE = """
@@ -164,7 +175,7 @@ BASE_TEMPLATE = """
           {% if not config['LAB'] %}
           <a href="/">All Labs</a><p>|</p>
           {% endif %}
-          <a href="/reset">Reset</a>
+          <a href="{% if lab_num %}/lab{{ lab_num }}/reset{% else %}/reset{% endif %}" onclick="return confirm('Apakah Anda yakin ingin me-reset lab ini ke kondisi awal? Progres dan data lab Anda akan dikembalikan seperti semula.');" style="color: #c0392b; font-weight: bold; background: #fdf2e9; padding: 3px 8px; border-radius: 4px; border: 1px solid #f5b7b1;">Reset Lab</a>
         </section>
       </header>
 
@@ -1488,9 +1499,68 @@ def get_flag(number):
     return current_app.config["FLAGS"][number]
 
 
+def get_session_id():
+    if not has_request_context():
+        return "default"
+    sid = session.get("sid")
+    if not sid or not isinstance(sid, str):
+        sid = uuid.uuid4().hex
+        session["sid"] = sid
+    return sid
+
+
+def get_session_db_dir():
+    lab = current_app.config.get("LAB") or "all"
+    path = os.path.join(tempfile.gettempdir(), "ctf_sessions", f"lab_{lab}")
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def get_session_db_path(sid=None):
+    if not sid:
+        sid = get_session_id()
+    safe_sid = re.sub(r"[^a-zA-Z0-9_-]", "", sid)
+    if not safe_sid:
+        safe_sid = uuid.uuid4().hex
+        if has_request_context():
+            session["sid"] = safe_sid
+    db_dir = get_session_db_dir()
+    session_db = os.path.join(db_dir, f"{safe_sid}.db")
+    if not os.path.exists(session_db):
+        master = current_app.config.get("MASTER_DB_PATH") or current_app.config.get("DB_PATH")
+        if master and os.path.exists(master):
+            shutil.copyfile(master, session_db)
+        else:
+            init_db(session_db, current_app.config["FLAGS"])
+    return session_db
+
+
+def reset_session_db(sid=None):
+    if not sid and has_request_context():
+        sid = session.get("sid")
+    if "db" in g:
+        try:
+            g.db.close()
+        except Exception:
+            pass
+        g.pop("db", None)
+    if sid:
+        safe_sid = re.sub(r"[^a-zA-Z0-9_-]", "", sid)
+        db_path = os.path.join(get_session_db_dir(), f"{safe_sid}.db")
+        master = current_app.config.get("MASTER_DB_PATH") or current_app.config.get("DB_PATH")
+        if master and os.path.exists(master):
+            shutil.copyfile(master, db_path)
+        elif os.path.exists(db_path):
+            init_db(db_path, current_app.config["FLAGS"])
+
+
 def get_db():
     if "db" not in g:
-        db = sqlite3.connect(current_app.config["DB_PATH"])
+        if has_request_context():
+            db_path = get_session_db_path()
+        else:
+            db_path = current_app.config.get("MASTER_DB_PATH") or current_app.config.get("DB_PATH")
+        db = sqlite3.connect(db_path)
         db.row_factory = sqlite3.Row
         g.db = db
     return g.db
@@ -1905,26 +1975,40 @@ def index():
 
 @bp.route("/reset", methods=["GET", "POST"])
 def reset():
+    reset_session_db()
+    old_sid = session.get("sid")
     session.clear()
-    try:
-        db = get_db()
-        db.execute("DELETE FROM lab3_carts")
-        db.execute("DELETE FROM lab4_carts")
-        db.execute("DELETE FROM lab5_emails")
-        db.execute("DELETE FROM members")
-        db.executemany(
-            "INSERT INTO members (username, password_hash, email, role, is_admin, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
-            [
-                ("jangannangis", generate_password_hash(os.urandom(8).hex()), "jangannangis@gembeng.com", "admin", 1, 1),
-                ("carlos", generate_password_hash(os.urandom(8).hex()), "carlos@exploit-lab.net", "user", 0, 1),
-            ],
-        )
-        db.commit()
-    except Exception:
-        pass
-    flash("Sesi dan data lab telah direset.", "info")
+    if old_sid:
+        session["sid"] = old_sid
+    flash("Sesi dan data lab telah direset ke kondisi awal.", "info")
     lab = current_app.config["LAB"]
     return redirect(f"/lab{lab}" if lab else "/")
+
+
+@bp.route("/lab<int:num>/reset", methods=["GET", "POST"])
+def lab_reset(num):
+    lab_mode = current_app.config.get("LAB")
+    if lab_mode and str(num) != str(lab_mode):
+        abort(404)
+    if num not in range(1, 7):
+        abort(404)
+
+    reset_session_db()
+    keys_to_remove = [
+        k for k in list(session.keys())
+        if k != "sid" and (
+            f"lab{num}" in k
+            or f"cart_lab{num}" in k
+            or (num in (3, 4) and k in ("cart", "cart_lab3", "balance", "receipt"))
+            or (num == 5 and k in ("member", "lab5_solved"))
+            or (num == 6 and k in ("lab6_price", "lab6_qty", "lab6_last_coupon", "lab6_user", "lab6_solved"))
+        )
+    ]
+    for k in keys_to_remove:
+        session.pop(k, None)
+
+    flash(f"Lingkungan Lab {num} telah berhasil di-reset ke kondisi awal.", "info")
+    return redirect(f"/lab{num}")
 
 
 @bp.route("/lab1")
@@ -3087,15 +3171,18 @@ def create_app():
     app.secret_key = os.environ.get(f"SECRET_KEY_{lab}") or os.environ.get(
         "SECRET_KEY", "dev-only-insecure-secret"
     )
+    app.permanent_session_lifetime = datetime.timedelta(days=7)
     app.config["LAB"] = lab
     app.config["FLAGS"] = {
         number: os.environ.get(f"FLAG_{number}", f"CTF{{dev_only_lab_{number}}}")
         for number in range(1, 7)
     }
-    db_default = os.path.join(tempfile.gettempdir(), "ctf_lab.db")
-    app.config["DB_PATH"] = os.environ.get("DB_PATH", db_default)
+    db_default = os.path.join(tempfile.gettempdir(), f"ctf_lab_{lab or 'all'}_master.db")
+    master_path = os.environ.get("DB_PATH", db_default)
+    app.config["DB_PATH"] = master_path
+    app.config["MASTER_DB_PATH"] = master_path
 
-    init_db(app.config["DB_PATH"], app.config["FLAGS"])
+    init_db(app.config["MASTER_DB_PATH"], app.config["FLAGS"])
     app.register_blueprint(bp)
 
     @app.teardown_appcontext

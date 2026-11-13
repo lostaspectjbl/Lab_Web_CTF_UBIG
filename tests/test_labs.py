@@ -607,3 +607,62 @@ def test_lab_mode_restricts_other_labs(make_client, lab):
     other = 1 if lab != 1 else 2
     assert lab_client.get(f"/lab{other}").status_code == 404
     assert lab_client.get("/reset").status_code == 302
+
+
+def test_multi_tenant_isolation_lab3(make_client):
+    app_client_1 = make_client(lab=3)
+    app_client_2 = make_client(lab=3)
+
+    # Participant 1 logs in and adds item to cart
+    app_client_1.post("/lab3/login", data={"username": "wiener", "password": "peter"})
+    app_client_1.post("/lab3", data={"action": "add", "pid": "1", "price": "1.00", "qty": "1"})
+
+    # Participant 2 logs in with same username
+    app_client_2.post("/lab3/login", data={"username": "wiener", "password": "peter"})
+
+    # Participant 2's page must NOT contain Charizard in cart (cart count is 0)
+    res2 = app_client_2.get("/lab3")
+    body2 = res2.get_data(as_text=True)
+    assert "Keranjang Belanja Anda Kosong" in body2 or "Item: 0" in body2 or ">0</p>" in body2
+
+    # Participant 1's page has 1 item in cart
+    res1 = app_client_1.get("/lab3")
+    body1 = res1.get_data(as_text=True)
+    assert "Charizard Holo 1st Edition" in body1
+
+
+def test_multi_tenant_isolation_lab5(make_client):
+    app_client_1 = make_client(lab=5)
+    app_client_2 = make_client(lab=5)
+
+    # Participant 1 accesses as admin and deletes carlos
+    with app_client_1.session_transaction() as sess:
+        sess["member"] = "jangannangis"
+    app_client_1.post("/lab5/admin/delete", data={"username": "carlos"}, follow_redirects=True)
+
+    res1 = app_client_1.get("/lab5/admin-panel")
+    assert "carlos@exploit-lab.net" not in res1.get_data(as_text=True)
+
+    # In Participant 2's session, carlos must STILL be present
+    with app_client_2.session_transaction() as sess:
+        sess["member"] = "jangannangis"
+    res2 = app_client_2.get("/lab5/admin-panel")
+    assert "carlos@exploit-lab.net" in res2.get_data(as_text=True)
+
+
+def test_lab_reset_route(make_client):
+    app_client = make_client(lab=3)
+    app_client.post("/lab3/login", data={"username": "wiener", "password": "peter"})
+    app_client.post("/lab3", data={"action": "add", "pid": "1", "price": "1.00", "qty": "1"})
+    res = app_client.get("/lab3")
+    assert "Charizard Holo 1st Edition" in res.get_data(as_text=True)
+
+    # Reset lab 3
+    reset_res = app_client.get("/lab3/reset", follow_redirects=True)
+    assert reset_res.status_code == 200
+    assert "berhasil di-reset" in reset_res.get_data(as_text=True)
+
+    # Cart is now empty
+    res_after = app_client.get("/lab3")
+    assert "Keranjang Belanja" not in res_after.get_data(as_text=True)
+
