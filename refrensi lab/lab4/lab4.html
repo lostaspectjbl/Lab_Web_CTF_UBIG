@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html><!--LAB_HEAD_START--><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link href="lab4_files/academyLabHeader_DRF6.css" rel="stylesheet">
+        <link href="lab4_files/labsEcommerce_DRF6.css" rel="stylesheet">
+        <title>High-level logic vulnerability</title>
+    <style>
+  .imageye-selected {
+    outline: 2px solid black !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+  }
+</style></head>
+<!--LAB_HEAD_END-->
+    <body>
+        <script src="lab4_files/labHeader_DRF6.js"></script>
+        <!--LAB_HEADER_START-->
+        <div id="academyLabHeader">
+            <section class="academyLabBanner">
+                <div class="container">
+                    <div class="logo"></div>
+                        <div class="title-container">
+                            <h2>High-level logic vulnerability</h2>
+                            <a class="link-back" href="https://portswigger.net/web-security/logic-flaws/examples/lab-logic-flaws-high-level">
+                                Back&nbsp;to&nbsp;lab&nbsp;description&nbsp;
+                                <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 28 30" enable-background="new 0 0 28 30" xml:space="preserve" title="back-arrow">
+                                    <g>
+                                        <polygon points="1.4,0 0,1.2 12.6,15 0,28.8 1.4,30 15.1,15"></polygon>
+                                        <polygon points="14.3,0 12.9,1.2 25.6,15 12.9,28.8 14.3,30 28,15"></polygon>
+                                    </g>
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="widgetcontainer-lab-status is-notsolved">
+                            <span>LAB</span>
+                            <p>Not solved</p>
+                            <span class="lab-status-icon"></span>
+                        </div>
+                    </div>
+                </section></div>
+            
+        
+        <!--LAB_HEADER_END-->
+        <div theme="ecommerce">
+            <section class="maincontainer">
+                <div class="container">
+                    <header class="navigation-header">
+                        <section class="top-links">
+                            <a href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/">Home</a><p>|</p>
+                            <a href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/my-account">My account</a><p>|</p>
+                            <a href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/cart">
+                                <img src="lab4_files/cart_blue_DRF6.svg">
+                            </a>
+                            <p>0</p>
+                            <p>|</p>
+                        </section>
+                    </header>
+                    <header class="notification-header">
+                    </header>
+                    <section class="ecoms-pageheader">
+                        <img src="lab4_files/shop_DRF6.svg">
+                    </section>
+                    <section class="container-list-tiles">
+                        <div>
+                            <img src="lab4_files/LeetLeatherJacket_DRF6.jpg">
+                            <h3>Lightweight "l33t" Leather Jacket</h3>
+                            <img src="lab4_files/rating5_DRF6.png">
+                            $1337.00
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=1">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/57_DRF6.jpg">
+                            <h3>Lightbulb Moments</h3>
+                            <img src="lab4_files/rating1_DRF6.png">
+                            $54.64
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=2">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/15_DRF6.jpg">
+                            <h3>Pet Experience Days</h3>
+                            <img src="lab4_files/rating4_DRF6.png">
+                            $36.79
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=3">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/36_DRF6.jpg">
+                            <h3>Caution Sign</h3>
+                            <img src="lab4_files/rating1_DRF6.png">
+                            $5.75
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=4">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/49_DRF6.jpg">
+                            <h3>Roulette Drinking Game</h3>
+                            <img src="lab4_files/rating5_DRF6.png">
+                            $54.29
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=5">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/43_DRF6.jpg">
+                            <h3>First Impression Costumes</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $66.47
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=6">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/17_DRF6.jpg">
+                            <h3>Picture Box</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $7.54
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=7">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/42_DRF6.jpg">
+                            <h3>Pest Control Umbrella</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $27.14
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=8">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/37_DRF6.jpg">
+                            <h3>The Giant Enter Key</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $75.35
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=9">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/64_DRF6.jpg">
+                            <h3>Hexbug Battleground Tarantula Double Pack</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $58.96
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=10">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/24_DRF6.jpg">
+                            <h3>The Alternative Christmas Tree</h3>
+                            <img src="lab4_files/rating2_DRF6.png">
+                            $31.04
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=11">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/2_DRF6.jpg">
+                            <h3>All-in-One Typewriter</h3>
+                            <img src="lab4_files/rating1_DRF6.png">
+                            $85.06
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=12">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/22_DRF6.jpg">
+                            <h3>Babbage Web Spray</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $13.66
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=13">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/6_DRF6.jpg">
+                            <h3>Com-Tool</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $10.70
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=14">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/19_DRF6.jpg">
+                            <h3>Potato Theater</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $50.28
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=15">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/72_DRF6.jpg">
+                            <h3>Baby Minding Shoes</h3>
+                            <img src="lab4_files/rating5_DRF6.png">
+                            $62.06
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=16">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/47_DRF6.jpg">
+                            <h3>3D Voice Assistants</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $32.30
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=17">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/56_DRF6.jpg">
+                            <h3>More Than Just Birdsong</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $3.39
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=18">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/58_DRF6.jpg">
+                            <h3>There is No 'I' in Team</h3>
+                            <img src="lab4_files/rating5_DRF6.png">
+                            $68.79
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=19">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab4_files/63_DRF6.jpg">
+                            <h3>Laser Tag</h3>
+                            <img src="lab4_files/rating3_DRF6.png">
+                            $94.47
+                            <a class="button" href="https://0a29000f04759a8c81cbc53600c8000c.web-security-academy.net/product?productId=20">View details</a>
+                        </div>
+                    </section>
+                </div>
+            </section>
+            <div class="footer-wrapper">
+            </div>
+        </div>
+    
+
+<protonpass-root-836b data-protonpass-role="root" data-protonpass-theme="os"></protonpass-root-836b></body></html>

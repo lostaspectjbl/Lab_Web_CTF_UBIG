@@ -3,10 +3,7 @@
 !.env.example
 __pycache__/
 *.py[cod]
-*$py.class
-*.db
 .pytest_cache/
 .venv/
-.venv313/
 venv/
-refrensi lab/
+*.db

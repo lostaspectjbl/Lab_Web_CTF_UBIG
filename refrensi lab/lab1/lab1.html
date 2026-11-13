@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html><!--LAB_HEAD_START--><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link href="lab1_files/academyLabHeader_bPh7.css" rel="stylesheet">
+        <link href="lab1_files/labsEcommerce_bPh7.css" rel="stylesheet">
+        <title>SQL injection vulnerability in WHERE clause allowing retrieval of hidden data</title>
+    <style>
+  .imageye-selected {
+    outline: 2px solid black !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+  }
+</style></head>
+<!--LAB_HEAD_END-->
+    <body>
+        <script src="lab1_files/labHeader_bPh7.js"></script>
+        <!--LAB_HEADER_START-->
+        <div id="academyLabHeader">
+            <section class="academyLabBanner">
+                <div class="container">
+                    <div class="logo"></div>
+                        <div class="title-container">
+                            <h2>SQL injection vulnerability in WHERE clause allowing retrieval of hidden data</h2>
+                            <a class="link-back" href="https://portswigger.net/web-security/sql-injection/lab-retrieve-hidden-data">
+                                Back&nbsp;to&nbsp;lab&nbsp;description&nbsp;
+                                <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 28 30" enable-background="new 0 0 28 30" xml:space="preserve" title="back-arrow">
+                                    <g>
+                                        <polygon points="1.4,0 0,1.2 12.6,15 0,28.8 1.4,30 15.1,15"></polygon>
+                                        <polygon points="14.3,0 12.9,1.2 25.6,15 12.9,28.8 14.3,30 28,15"></polygon>
+                                    </g>
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="widgetcontainer-lab-status is-notsolved">
+                            <span>LAB</span>
+                            <p>Not solved</p>
+                            <span class="lab-status-icon"></span>
+                        </div>
+                    </div>
+                </section></div>
+            
+        
+        <!--LAB_HEADER_END-->
+        <div theme="ecommerce">
+            <section class="maincontainer">
+                <div class="container">
+                    <header class="navigation-header">
+                        <section class="top-links">
+                            <a href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/">Home</a><p>|</p>
+                        </section>
+                    </header>
+                    <header class="notification-header">
+                    </header>
+                    <section class="ecoms-pageheader">
+                        <img src="lab1_files/shop_bPh7.svg">
+                    </section>
+                    <section class="search-filters">
+                        <label>Refine your search:</label>
+                        <a class="filter-category selected" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/">All</a>
+                        <a class="filter-category" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/filter?category=Clothing%2c+shoes+and+accessories">Clothing, shoes and accessories</a>
+                        <a class="filter-category" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/filter?category=Corporate+gifts">Corporate gifts</a>
+                        <a class="filter-category" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/filter?category=Food+%26+Drink">Food &amp; Drink</a>
+                        <a class="filter-category" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/filter?category=Gifts">Gifts</a>
+                    </section>
+                    <section class="container-list-tiles">
+                        <div>
+                            <img src="lab1_files/28_bPh7.jpg">
+                            <h3>Vintage Neck Defender</h3>
+                            <img src="lab1_files/rating2_bPh7.png">
+                            $7.85
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=6">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/72_bPh7.jpg">
+                            <h3>Baby Minding Shoes</h3>
+                            <img src="lab1_files/rating2_bPh7.png">
+                            $66.19
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=11">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/27_bPh7.jpg">
+                            <h3>The Trolley-ON</h3>
+                            <img src="lab1_files/rating3_bPh7.png">
+                            $98.87
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=16">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/8_bPh7.jpg">
+                            <h3>Folding Gadgets</h3>
+                            <img src="lab1_files/rating2_bPh7.png">
+                            $61.23
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=9">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/6_bPh7.jpg">
+                            <h3>Com-Tool</h3>
+                            <img src="lab1_files/rating2_bPh7.png">
+                            $6.50
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=14">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/36_bPh7.jpg">
+                            <h3>Caution Sign</h3>
+                            <img src="lab1_files/rating3_bPh7.png">
+                            $22.74
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=19">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/1_bPh7.jpg">
+                            <h3>Eggtastic, Fun, Food Eggcessories</h3>
+                            <img src="lab1_files/rating1_bPh7.png">
+                            $37.16
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=10">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/23_bPh7.jpg">
+                            <h3>Sprout More Brain Power</h3>
+                            <img src="lab1_files/rating3_bPh7.png">
+                            $80.35
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=15">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/52_bPh7.jpg">
+                            <h3>Hydrated Crackers</h3>
+                            <img src="lab1_files/rating2_bPh7.png">
+                            $23.45
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=20">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/21_bPh7.jpg">
+                            <h3>Snow Delivered To Your Door</h3>
+                            <img src="lab1_files/rating1_bPh7.png">
+                            $63.06
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=7">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/31_bPh7.jpg">
+                            <h3>Couple's Umbrella</h3>
+                            <img src="lab1_files/rating5_bPh7.png">
+                            $14.17
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=12">View details</a>
+                        </div>
+                        <div>
+                            <img src="lab1_files/7_bPh7.jpg">
+                            <h3>Conversation Controlling Lemon</h3>
+                            <img src="lab1_files/rating4_bPh7.png">
+                            $37.67
+                            <a class="button" href="https://0aca0049031559968081fd8a009800c8.web-security-academy.net/product?productId=17">View details</a>
+                        </div>
+                    </section>
+                </div>
+            </section>
+            <div class="footer-wrapper">
+            </div>
+        </div>
+    
+
+<protonpass-root-f014 data-protonpass-role="root" data-protonpass-theme="os"></protonpass-root-f014></body></html>

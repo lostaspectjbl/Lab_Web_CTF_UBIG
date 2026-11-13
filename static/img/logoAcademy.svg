@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 204 70" width="204" height="70">
+  <g transform="translate(4, 14)">
+    <!-- Flame / shield accent -->
+    <path d="M 0 18 C 0 8, 12 0, 18 0 C 24 0, 36 8, 36 18 C 36 29, 24 38, 18 42 C 12 38, 0 29, 0 18 Z" fill="#ff6633"/>
+    <circle cx="18" cy="18" r="7" fill="#ffffff"/>
+    <circle cx="18" cy="18" r="3.5" fill="#ff6633"/>
+    
+    <!-- Text -->
+    <text x="46" y="16" font-family="'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="800" fill="#262626" letter-spacing="-0.2px">PortSwigger</text>
+    <text x="46" y="28" font-family="'Helvetica Neue', Arial, sans-serif" font-size="8.5" font-weight="600" fill="#737373" letter-spacing="1.2px">WEB SECURITY</text>
+    <text x="46" y="39" font-family="'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="800" fill="#ff6633" letter-spacing="1.8px">ACADEMY</text>
+  </g>
+</svg>

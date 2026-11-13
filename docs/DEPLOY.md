@@ -1,230 +1,185 @@
-# Panduan Deployment Server Linux & aaPanel
+# Panduan Deploy di aaPanel
 
-Panduan langkah demi langkah untuk mengunggah repositori soal CTF Nusatech ke GitHub pribadi, men-deploy pada server Linux dengan panel aaPanel, melakukan verifikasi, dan mengamankan akses publik.
+Panduan ini memasang enam lab sebagai enam container Docker di server aaPanel.
+Contoh lokasi proyek: `/www/ctf-labs`, port host `8011`-`8016`.
 
----
+## 1. Prasyarat
 
-## 1. Unggah Repositori ke GitHub Pribadi
+- aaPanel sudah terpasang dan server dapat diakses.
+- Docker sudah terpasang dari **App Store** aaPanel (cari "Docker" lalu install).
+- Repo proyek bersifat **private** di GitHub (atau Git provider lain).
+- Port `8011`-`8016` belum dipakai aplikasi lain.
 
-Lakukan langkah ini di **Komputer Lokal** Anda:
-
-> ⚠️ **Pastikan repositori disetel sebagai PRIVATE** agar peserta lomba tidak dapat melihat kode sumber maupun kunci jawaban.
-
-1. Buka [GitHub](https://github.com), buat repositori baru dengan nama misalnya `ctf-nusatech-labs`, dan pilih **Private**.
-2. Di terminal komputer lokal pada folder proyek `c:\Soal WEb` (atau path folder proyek Anda):
+Cek Docker di server:
 
 ```bash
-# [Terminal Komputer Lokal]
-# Inisialisasi Git dan tambahkan remote repositori GitHub Anda
-git remote add origin https://github.com/USERNAME-ANDA/ctf-nusatech-labs.git
+docker --version
+docker compose version
+```
 
-# Pastikan branch utama bernama main
+Jika `docker compose` tidak tersedia, gunakan `docker-compose` pada semua
+perintah di bawah.
+
+## 2. Push Proyek dari Komputer Lokal
+
+Jalankan di folder proyek:
+
+```bash
+git init
+git add .
+git commit -m "Enam lab CTF web"
 git branch -M main
-
-# Unggah seluruh kode ke branch main
+git remote add origin https://github.com/<USERNAME>/<REPO>.git
 git push -u origin main
 ```
-*Catatan:* Jika diminta autentikasi kata sandi oleh Git, gunakan **Personal Access Token (Classic)** dengan hak akses `repo` yang dapat dibuat melalui menu *GitHub Settings &rarr; Developer Settings &rarr; Personal access tokens*.
 
----
+Saat diminta password, gunakan **Personal Access Token** GitHub, bukan password
+akun. Pastikan `.env` tidak ikut ter-commit (sudah ada di `.gitignore`).
 
-## 2. Pemasangan & Konfigurasi di Server (aaPanel)
+## 3. Clone dan Isi Environment di Server
 
-Lakukan langkah ini melalui **Terminal SSH Server** (misalnya via PuTTY, Terminal VSCode SSH, atau fitur Terminal di dashboard aaPanel):
-
-### Langkah 2.1: Kloning Repositori ke Direktori Server
-Target direktori yang disepakati adalah `/www/ctf-labs`:
+Login SSH ke server, lalu:
 
 ```bash
-# [Terminal Server SSH]
-# Masuk ke direktori web aaPanel
 cd /www
-
-# Unduh repositori privat menggunakan Personal Access Token Anda
-git clone https://USERNAME-ANDA:TOKEN-GITHUB@github.com/USERNAME-ANDA/ctf-nusatech-labs.git ctf-labs
-
-# Masuk ke direktori project yang baru diunduh
+git clone https://<USERNAME>:<TOKEN>@github.com/<USERNAME>/<REPO>.git ctf-labs
 cd /www/ctf-labs
-```
-
-### Langkah 2.2: Konfigurasi File Lingkungan (.env)
-File `.env` berisi nilai rahasia seperti kunci sesi Flask dan flag yang akan dibaca oleh platform CTFd:
-
-```bash
-# [Terminal Server SSH]
-# Salin template konfigurasi lingkungan
 cp .env.example .env
-
-# Edit file .env menggunakan text editor nano
-nano .env
 ```
 
-Untuk menghasilkan string acak yang aman sebagai `SECRET_KEY_1` sampai `SECRET_KEY_6`, Anda dapat menjalankan perintah OpenSSL berikut di baris perintah:
+Buat enam secret acak:
 
 ```bash
-# [Terminal Server SSH]
-# Contoh perintah pembuat kunci rahasia acak 32 karakter
-openssl rand -hex 16
+for i in 1 2 3 4 5 6; do openssl rand -hex 16; done
 ```
 
-Contoh isi file `.env` di server produksi:
-```ini
-SECRET_KEY_1=a3f9c812d4b7e651908a2c4e6f1837b2
-SECRET_KEY_2=91b4e2c7a8d5f30614e892c57b1049fa
-SECRET_KEY_3=e72c5b9014a8f3d6b1297e54c8a160df
-SECRET_KEY_4=08b3a7f2e1c9d4659b8a1c3e5d7204fa
-SECRET_KEY_5=3c9e1fa74d82b056e1824a7c9d05f31b
-SECRET_KEY_6=b8104e7a2d9c3f6514e802a57c913bfa
+Buka `.env` (misalnya dengan editor aaPanel atau `nano .env`), lalu isi
+`SECRET_KEY_1` sampai `SECRET_KEY_6` dengan hasil di atas. Isi juga
+`FLAG_1` sampai `FLAG_6` dengan flag asli lomba, contoh format
+`CTF{...}`. Jangan memakai flag contoh dari `.env.example`.
 
-FLAG_1=CTF{nusatech_sqli_where_clause_retrieval_89f3}
-FLAG_2=CTF{nusatech_sqli_auth_bypass_admin_panel_10d2}
-FLAG_3=CTF{nusatech_client_price_tampering_trust_4b71}
-FLAG_4=CTF{nusatech_high_level_logic_negative_qty_992a}
-FLAG_5=CTF{nusatech_inconsistent_email_control_b831}
-FLAG_6=CTF{nusatech_flawed_promo_enforcement_chain_7c0e}
-```
-*(Tekan `CTRL + O` lalu `Enter` untuk menyimpan, kemudian `CTRL + X` untuk keluar dari nano).*
-
-### Langkah 2.3: Build Image dan Jalankan Container
-Jalankan Docker Compose untuk membangun image dan mengaktifkan 6 container lab:
+Amankan file:
 
 ```bash
-# [Terminal Server SSH]
+chmod 600 .env
+```
+
+## 4. Build dan Jalankan
+
+```bash
 docker compose up -d --build
 ```
-*Jika server Anda masih menggunakan Docker Compose versi lama (v1), gunakan perintah:*
+
+Perintah ini membangun satu image lalu menjalankan enam container:
+`ctf-lab1` sampai `ctf-lab6`. Tidak ada volume, jadi database SQLite di dalam
+container akan dibuat ulang saat container restart.
+
+Cek status:
+
 ```bash
-docker-compose up -d --build
-```
-
----
-
-## 3. Verifikasi Status & Uji Coba Layanan
-
-Setelah proses build selesai, pastikan seluruh container berjalan dengan semestinya:
-
-### Langkah 3.1: Periksa Daftar Container
-```bash
-# [Terminal Server SSH]
 docker compose ps
 ```
-Pastikan status seluruh container `nusatech-lab1` sampai `nusatech-lab6` berada pada kondisi `Up` (berjalan) dan memetakan port `0.0.0.0:8011-8016->5000/tcp`.
 
-### Langkah 3.2: Uji Respon Pengalihan Root (HTTP 302)
-Setiap lab harus otomatis mengalihkan permintaan root `/` ke endpoint spesifiknya:
+Semua service harus berstatus `running`.
 
-```bash
-# [Terminal Server SSH]
-# Uji port 8011 sampai 8016 (seluruhnya harus menghasilkan status HTTP 302 Found)
-for port in {8011..8016}; do
-  curl -s -o /dev/null -w "Port $port: HTTP %{http_code}\n" http://127.0.0.1:$port/
-done
-```
-Output yang diharapkan:
-```text
-Port 8011: HTTP 302
-Port 8012: HTTP 302
-Port 8013: HTTP 302
-Port 8014: HTTP 302
-Port 8015: HTTP 302
-Port 8016: HTTP 302
-```
-
-### Langkah 3.3: Uji Eksploitasi Pembuktian (Proof-of-Concept Lab 1)
-Jalankan satu perintah curl untuk membuktikan bahwa celah SQL Injection pada Lab 1 bekerja dan menampilkan flag yang telah dikonfigurasi:
+## 5. Verifikasi Cepat
 
 ```bash
-# [Terminal Server SSH]
-curl -s "http://127.0.0.1:8011/lab1?category=Elektronik'+OR+1=1--" | grep -o 'CTF{[^}]*}'
+curl -I http://127.0.0.1:8011
 ```
-Jika berhasil, terminal server akan langsung mencetak string flag Lab 1 Anda.
 
----
+Harus menghasilkan `302` dengan `Location: /lab1`. Ulangi untuk port `8012`
+sampai `8016` dan sesuaikan nomor lab.
 
-## 4. Konfigurasi Akses dari Luar (Public Access)
+Uji bahwa flag terbaca (ganti dengan flag asli di `.env`):
 
-Pilih salah satu dari dua metode di bawah ini sesuai arsitektur jaringan Anda:
-
-### Opsi A: Akses Langsung Menggunakan Port Host (Port 8011-8016)
-Paling sederhana dan cepat jika peserta mengakses via alamat IP atau subdomain utama:
-1. **Buka Port di Panel aaPanel**:
-   - Masuk ke dashboard aaPanel web Anda (`http://IP-SERVER:8888`).
-   - Buka menu **Security** pada bilah sisi kiri.
-   - Pada bagian **Firewall Rules**, tambahkan port `8011:8016` (TCP), beri keterangan *"CTF Labs Nusatech"*, lalu klik **Add**.
-2. **Buka Port di Cloud Provider (Security Group)**:
-   - Jika server Anda berada di AWS, GCP, DigitalOcean, Alibaba Cloud, atau provider VPS lainnya, buka pengaturan firewall / Security Group VPS Anda.
-   - Tambahkan Inbound Rule: Protokol **TCP**, Port Range **8011-8016**, Source **0.0.0.0/0** (Anywhere).
-3. Tautan untuk peserta lomba:
-   - Lab 1: `http://IP-SERVER:8011`
-   - Lab 2: `http://IP-SERVER:8012`
-   - ... dan seterusnya hingga port `8016`.
-
-### Opsi B: Menggunakan Subdomain & Reverse Proxy aaPanel + SSL (Rekomendasi)
-Paling rapi dan profesional jika Anda memiliki domain resmi (misal: `domainctf.id`):
-1. **Buat DNS Record A**:
-   - Di DNS manager (Cloudflare/Namecheap/dll), arahkan subdomain ke IP server:
-     - `lab1.domainctf.id` &rarr; IP-SERVER
-     - `lab2.domainctf.id` &rarr; IP-SERVER
-     - ... hingga `lab6.domainctf.id`.
-2. **Ubah Binding docker-compose.yml agar Tidak Terbuka Langsung ke Publik**:
-   - Ubah pemetaan port di `docker-compose.yml` menjadi `127.0.0.1:8011:5000` (agar hanya dapat diakses secara lokal oleh Nginx Reverse Proxy).
-   - Jalankan `docker compose up -d` untuk menerapkan perubahan.
-3. **Tambahkan Website & Reverse Proxy di aaPanel**:
-   - Masuk ke menu **Website** di aaPanel, klik **Add Site**.
-   - Masukkan Domain: `lab1.domainctf.id`, pilih PHP Version: *Pure Python/Static*.
-   - Setelah site terbentuk, klik nama domain tersebut &rarr; buka tab **Reverse Proxy** &rarr; klik **Add Reverse Proxy**:
-     - Proxy Name: `lab1-proxy`
-     - Target URL: `http://127.0.0.1:8011`
-     - Sent Domain: `$host`
-     - Klik **Save**.
-   - Buka tab **SSL** di konfigurasi website yang sama, centang Let's Encrypt, lalu klik **Apply** untuk mengaktifkan HTTPS gratis.
-   - Ulangi langkah serupa untuk `lab2` s/d `lab6`.
-
----
-
-## 5. Pemeliharaan & Perawatan Berkala
-
-### Memperbarui Kode (Update):
-Jika terdapat perbaikan kode di komputer lokal dan telah di-push ke GitHub:
 ```bash
-# [Terminal Server SSH]
+curl -s "http://127.0.0.1:8011/lab1?category=Gifts%27%20OR%201%3D1--" \
+  | grep -o 'CTF{[^}]*}'
+```
+
+Jika perintah menghasilkan flag, aplikasi dan environment sudah benar.
+
+## 6. Membuka Akses dari Luar
+
+### Opsi A - Buka Port Langsung
+
+1. Di aaPanel: **Security** → izinkan port `8011`-`8016` (TCP).
+2. Di firewall penyedia cloud (AWS Security Group, GCP Firewall, dll.),
+   izinkan port yang sama.
+3. Akses `http://IP-SERVER:8011` sampai `http://IP-SERVER:8016`.
+
+Cara ini paling cepat, tetapi setiap lab memakai port berbeda.
+
+### Opsi B - Reverse Proxy per Subdomain (Disarankan)
+
+Gunakan satu subdomain per lab, misalnya `lab1.domainkamu.com` sampai
+`lab6.domainkamu.com`.
+
+1. Ubah bagian `ports` di `docker-compose.yml` agar hanya listen di localhost:
+
+   ```yaml
+   ports:
+     - "127.0.0.1:8011:5000"
+   ```
+
+   Lakukan untuk semua service, lalu jalankan ulang:
+
+   ```bash
+   docker compose up -d
+   ```
+
+2. Buat DNS tipe `A` untuk setiap subdomain ke IP server.
+3. Di aaPanel: **Website** → **Add site**, isi domain `lab1.domainkamu.com`,
+   tanpa PHP/database.
+4. Buka pengaturan site → **Reverse Proxy** → **Add reverse proxy**:
+   - Target URL: `http://127.0.0.1:8011`
+   - Kirim header `Host` asli.
+5. Ulangi untuk lab 2-6 dengan port `8012`-`8016`.
+6. Aktifkan **SSL** → **Let's Encrypt** untuk setiap site agar memakai HTTPS.
+
+Jangan membuka port `8011`-`8016` ke publik jika memakai Opsi B.
+
+## 7. Update Aplikasi
+
+```bash
 cd /www/ctf-labs
 git pull
 docker compose up -d --build
 ```
 
-### Memeriksa Log Container:
-Jika ada peserta yang melaporkan kendala pada lab tertentu:
-```bash
-# [Terminal Server SSH]
-# Lihat log seluruh container secara real-time
-docker compose logs -f
+Lihat log satu lab:
 
-# Atau lihat log spesifik salah satu container (misal Lab 3)
-docker compose logs -f lab3
+```bash
+docker compose logs -f lab1
 ```
 
-### Merestart Satu Lab:
-Jika database salah satu lab perlu di-reset atau container mengalami kendala:
-```bash
-# [Terminal Server SSH]
-docker compose restart lab2
-```
+Restart, hentikan, atau hapus:
 
-### Menghentikan Semua Lab:
-Setelah kompetisi CTF selesai:
 ```bash
-# [Terminal Server SSH]
+docker compose restart lab1
+docker compose stop
 docker compose down
 ```
 
----
+## 8. Troubleshooting
 
-## 6. Panduan Troubleshooting
+- **Compose berhenti dengan pesan `SECRET_KEY_n wajib diisi`**: `.env` belum
+  ada atau variabelnya kosong. Salin dari `.env.example` dan isi.
+- **Port sudah dipakai**: cek dengan `ss -lntp | grep 801`, lalu hentikan
+  aplikasi yang memakai port tersebut atau ubah port host di compose.
+- **Halaman 502 dari reverse proxy**: pastikan container berjalan
+  (`docker compose ps`) dan target proxy memakai port host yang benar.
+- **Perubahan `.env` tidak terbaca**: jalankan `docker compose up -d` agar
+  container dibuat ulang dengan environment baru.
+- **Ingin mengosongkan database/keranjang peserta**: restart container lab
+  tersebut; database dibuat ulang saat start.
+- **Docker tidak berjalan**: buka App Store aaPanel → Docker → start service.
 
-| Gejala Masalah | Penyebab Umum | Solusi Perbaikan |
-| :--- | :--- | :--- |
-| **Container berstatus *Exit (1)*** | Variabel lingkungan pada `.env` belum diisi atau salah penulisan nama variabel. | Periksa log dengan `docker compose logs labN`. Pastikan seluruh `SECRET_KEY_1..6` dan `FLAG_1..6` memiliki nilai di `.env`. |
-| **Error *port is already allocated*** | Port 8011-8016 telah digunakan oleh proses lain di host. | Cek proses yang menduduki port: `sudo lsof -i :8011` atau `sudo netstat -tlpn \| grep 8011`. Matikan proses tersebut atau ubah port host di `docker-compose.yml`. |
-| **Bisa di-curl dari lokal server, tapi tidak bisa dibuka dari browser peserta** | Firewall server atau Security Group cloud provider masih memblokir port 8011-8016. | Buka menu Security di aaPanel dan tambahkan port `8011:8016`. Pastikan juga panel cloud provider (AWS/DigitalOcean Security Group) mengizinkan inbound traffic ke port tersebut. |
-| **Data peserta bercampur atau sesi tertukar** | Dua peserta berbagi browser yang sama tanpa menggunakan mode penyamaran (*Incognito*). | Sesi peserta disimpan via cookie sesi terenkripsi. Peserta cukup mengklik link **Reset Sesi** pada navbar untuk mengosongkan keranjang dan saldo mereka. |
+## 9. Pengamanan
+
+- Simpan repo sebagai private dan batasi akses SSH.
+- Jangan commit `.env`; file itu berisi flag dan secret.
+- Jalankan lab hanya untuk peserta lomba, lalu matikan container setelah acara.
+- Flag di CTFd harus sama dengan `FLAG_n` di `.env`.
+- Panduan membuat challenge di CTFd ada di [CTFD.md](CTFD.md).
